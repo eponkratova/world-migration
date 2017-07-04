@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8'>
+	<meta name='viewport' content='width=dvice-width, initial-scale=1'>
+	<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+
+	<script type='text/javascript' src='https://www.google.com/jsapi'></script>
+	<script type='text/javascript'>
+
+	google.load('visualization', '1.0', {
+		'packages': ['corechart', 'geochart', 'controls'],
+	});
+
+	google.setOnLoadCallback(drawCharts);	
+
+	function GetDataFromSheet(url, queryString, callback){
+		var query = new google.visualization.Query(url);
+		query.setQuery(queryString);
+		query.send(gotResponse);	
+
+    function gotResponse(response) {
+        if (response.isError()) {
+            console.log(response.getReasons());
+            alert('Error in query: ' + response.getMessage() + " " + response.getDetailedMessage());
+            return;
+        }
+        if (response.hasWarning()) {
+            console.log(response.getReasons());
+            alert('Warning from query: ' + response.getMessage() + " " + response.getDetailedMessage());
+            return;
+        }
+        callback(response);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+	function drawCharts() {
+    	var url, queryString;			
+		url = 'https://docs.google.com/spreadsheets/d/12FvaXEuLwrvsVD6uDiyRLqlBapoWtKUJlt4OYCnD320/gviz/tq?gid=329497417&headers=1';
+		queryString = 'select A, C, B';
+		GetDataFromSheet(url, queryString, handleMap);		
+		url = 'https://docs.google.com/spreadsheets/d/12FvaXEuLwrvsVD6uDiyRLqlBapoWtKUJlt4OYCnD320/gviz/tq?gid=2137146823&headers=1';
+		queryString = 'select A, C, D, B';		
+		GetDataFromSheet(url, queryString, handleColGraph);
+		url = 'https://docs.google.com/spreadsheets/d/12FvaXEuLwrvsVD6uDiyRLqlBapoWtKUJlt4OYCnD320/gviz/tq?gid=1971388014&headers=1';
+		queryString = 'select A, B, C';
+		GetDataFromSheet(url, queryString, handleScatGraph);
+		url = 'https://docs.google.com/spreadsheets/d/12FvaXEuLwrvsVD6uDiyRLqlBapoWtKUJlt4OYCnD320/gviz/tq?gid=736677527&headers=1';
+		queryString = 'select K, count(K) group by K';
+		GetDataFromSheet(url, queryString, handleDon);		
+	}
+//------------------------------------------------------------------------------
+
+
+	function handleMap(response){
+		 var data = response.getDataTable();
+		 var container = new google.visualization.Dashboard(document.getElementById('stockContainer'));
+		 var control = new google.visualization.ControlWrapper({
+			 	controlType: 'CategoryFilter',
+			 	containerId: 'stockSlider',
+			 	options: {
+			 		filterColumnIndex: 2,
+			 		ui: {allowMultiple: false,
+			 			allowTyping: false,			 			
+			 		},	
+			 	}
+		 });
+		 var chartOptions = {
+		 		height: 300,
+		 		colorAxis: {
+    				values:[100000, 500000, 1000000, 2500000, 5000000, 10000000],
+    				colors:['#8ECE6D', '#28C15B', '#14AD94','#55B6D0','#4F81BD','#3D679B']
+				},	
+				legend: 'none',
+		 	};
+		 var chart = new google.visualization.ChartWrapper({ 	
+			 	chartType: 'GeoChart',
+			 	containerId: 'stockMap',
+			 	options: chartOptions
+		 });	
+	container.bind(control, chart);
+	container.draw(data);
+
+	}
+//------------------------------------------------------------------------------		 
+
+	function handleColGraph(response){		
+		var data = response.getDataTable();	
+		var container = new google.visualization.Dashboard(document.getElementById('unemContainer'));
+		var control = new google.visualization.ControlWrapper({
+		 	controlType: 'CategoryFilter',
+			 	containerId: 'unemSlide',
+			 	options: {
+			 		filterColumnIndex: 3,
+			 		ui: {allowMultiple: false,
+			 			allowTyping: false,
+			 		},
+			 	}	
+		 });	
+
+		var chartOptions = {
+		 		title: 'The unemployment rate of foreign-born is higher than that of the nationals',
+		 		height: 380,
+		        hAxis: {
+			        slantedText: true,
+			        slantedTextAngle: 90,
+			        textStyle : {
+			            fontSize: 6.5
+			        }
+			    }, 
+			    vAxis: {
+			    	title: 'Percentages',
+			    	format: ' ',
+				    gridlines: {
+				        color: 'transparent'
+				    }			    	
+			    },    		 		
+          		legend: {position: 'bottom'},		 		
+		 		series: {
+		            0: { color: '#DCDCDC',type: 'scatter', pointSize: 7, pointShape: 'diamond' },
+		           	1: { color: '#3D679B', type: 'scatter', pointSize: 7, pointShape: 'diamond'},			 			
+		 			2: {type:'none', visibleInLegend: false}
+		 		}			    
+		 };
+
+		var chart = new google.visualization.ChartWrapper({ 	
+			 	chartType: 'ColumnChart',			 			 	
+			 	containerId: 'unemGraph',
+			 	options: chartOptions
+		 });	
+
+	container.bind(control, chart);
+	container.draw(data);	
+
+	} 
+
+//------------------------------------------------------------------------------
+
+
+		function handleScatGraph(response){
+			var data = response.getDataTable();
+			var chart = new google.visualization.ColumnChart(document.getElementById('educationBar'));
+			var options = {
+		 		title: 'Difference in employment rates compared with native-born are large for the high-educated, but less the low-educated',
+		 		height: 380,
+		        hAxis: {
+			        slantedText: true,
+			        slantedTextAngle: 90,
+			        textStyle : {
+			            fontSize: 6.5
+			        }
+			    }, 	
+			    vAxis: {
+			    	title: 'Percentages',
+				    gridlines: {
+				        color: 'transparent'
+				    }			    	
+			    },				    	 						
+				series: {
+		            0: { color: '#55B6D0', type: 'scatter',  pointSize: 5, pointShape: 'diamond'},
+		            1: { color: '#4F81BD', type: 'scatter', pointSize: 5, pointShape: 'circle'},
+				},
+				legend: {position: 'bottom'},
+			};
+
+			chart.draw(data, options);
+		}				 		
+
+//------------------------------------------------------------------------------
+
+		function handleDon(response){
+			var data = response.getDataTable();
+			var chart = new google.visualization.PieChart(document.getElementById('ft'));
+			var options = {
+				title: 'Cross-border assignment of senior executives is still in its early stages ("Fortune 500: CEOs by country of birth (2015)")',
+		 		height: 380,				
+				pieHole: 0.6,
+				slices: {
+            		0: { color: '#DCDCDC' },
+            		1: { color: '#A9A9A9' },
+            		2: { color: '#708090'}
+          		},
+				legend: {
+					position: 'right',
+					alignment: 'center',
+					maxLines: 5,
+						textStyle : {
+			            	fontSize: 11
+			            },	
+				},
+				chartArea: {height: '50%'}
+			};	
+
+		chart.draw(data, options);		
+
+	}
+	
+	</script>	
+
+</head>
+<body>
+	<div class='container-fluid'>
+		<div class='row'>
+			<div class='col-xs-12 col-sm-12' style="font-size: 11px; font-weight: bold; "> <center>International migrant stock refers to the total number of persons born in a country other than that in which they reside. It is also known as a country's "foreign-born population."</center> </div>	
+		</div>		
+		<div class='row'>
+			<div class='col-xs-12 col-sm-12'>
+				<div id='stockContainer'>
+					<div id='stockSlider'></div>				
+					<div id='stockMap';"></div>
+				</div>
+			</div>						
+		<div class='row'>
+			<div class='col-xs-12 col-sm-4'>
+				<div id='unemContainer'>
+					<div id='unemSlide'></div>				
+					<div id='unemGraph'></div>
+				</div>
+			</div>
+			<div class='col-xs-12 col-sm-4'>
+				<div id='educationBar'></div>
+			</div>
+			<div class='col-xs-12 col-sm-4'>
+				<div id='ft'></div>
+			</div>			
+		</div>
+	</div>
+</body>
+</html>
